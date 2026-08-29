@@ -1,0 +1,6 @@
+{
+  "appId": "com.sololeveling.system",
+  "appName": "System",
+  "webDir": "out",
+  "bundledWebRuntime": false
+}
