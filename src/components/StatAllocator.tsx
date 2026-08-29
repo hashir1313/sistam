@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PlayerData } from '@/lib/types';
 import { calculateCoinsFromXp } from '@/lib/formulas';
-import { AlertCircle, CheckSquare, Coins, Plus, Check, Zap, AlertTriangle } from 'lucide-react';
+import { Coins, Plus, Check, Zap } from 'lucide-react';
 
 interface StatAllocatorProps {
   player: PlayerData;
@@ -54,10 +54,10 @@ export default function StatAllocator({ player, onAddXp, onCreateStat }: StatAll
       <div className="flex justify-between items-center border-b border-cyan-500/30 pb-4 mb-5 relative z-10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded border border-cyan-400 bg-cyan-950/80 flex items-center justify-center text-cyan-300 font-bold shadow-system-glow">
-            !
+            <Zap className="w-4 h-4 text-cyan-400 fill-cyan-400/20" />
           </div>
           <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-cyan-300 neon-text-glow">
-            QUEST INFO
+            QUEST XP ALLOCATOR
           </h3>
         </div>
 
@@ -68,13 +68,6 @@ export default function StatAllocator({ player, onAddXp, onCreateStat }: StatAll
           <Plus className="w-3.5 h-3.5" />
           Create Custom Stat
         </button>
-      </div>
-
-      {/* Daily Quest Announcement Header */}
-      <div className="text-center mb-5 relative z-10">
-        <p className="text-xs text-cyan-300 font-semibold tracking-wider bg-cyan-950/40 py-1.5 px-4 rounded border border-cyan-500/20 inline-block">
-          [Daily Quest: Physical & Notebook Growth Mission Has Arrived.]
-        </p>
       </div>
 
       {/* Add New Stat Form Drawer */}
@@ -106,29 +99,6 @@ export default function StatAllocator({ player, onAddXp, onCreateStat }: StatAll
           {successMsg}
         </div>
       )}
-
-      {/* Quest Goal Checklist Preview */}
-      <div className="bg-slate-950/60 p-4 rounded-lg border border-cyan-500/30 mb-5 relative z-10 space-y-3">
-        <div className="text-center font-bold text-sm text-cyan-300 tracking-widest uppercase border-b border-cyan-500/20 pb-2">
-          GOAL
-        </div>
-        <div className="space-y-2.5 text-xs text-slate-200">
-          <div className="flex items-center justify-between">
-            <span>Physical / Notebook Quests:</span>
-            <div className="flex items-center gap-2">
-              <span className="text-cyan-400 font-bold font-mono">[20/20]</span>
-              <CheckSquare className="w-4 h-4 text-emerald-400" />
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>XP Allocation Status:</span>
-            <div className="flex items-center gap-2">
-              <span className="text-cyan-400 font-bold font-mono">[{xpNum > 0 ? '1/1' : '0/1'}]</span>
-              <CheckSquare className={`w-4 h-4 ${xpNum > 0 ? 'text-emerald-400' : 'text-slate-600'}`} />
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Allocation Form */}
       <form onSubmit={handleSubmitXp} className="space-y-4 relative z-10">
@@ -175,17 +145,6 @@ export default function StatAllocator({ player, onAddXp, onCreateStat }: StatAll
             <span className="font-bold text-sm text-amber-400">+{estimatedCoins} Coins</span>
           </div>
         )}
-
-        {/* Penalty Warning Callout Box matching Image 2 */}
-        <div className="bg-red-950/30 p-3.5 rounded-lg border border-red-500/40 text-center text-xs space-y-1">
-          <div className="text-red-400 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
-            <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse" />
-            WARNING
-          </div>
-          <p className="text-slate-300 text-[11px] leading-relaxed">
-            Failure to complete the daily quest will result in an appropriate <span className="text-red-500 font-bold">penalty</span>.
-          </p>
-        </div>
 
         {/* Interactive Holographic Checkmark Submission Button */}
         <button
