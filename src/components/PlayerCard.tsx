@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { PlayerData } from '@/lib/types';
 import { getXpRequiredForNextLevel } from '@/lib/formulas';
-import { Download, Flame, Shield, Coins, Sparkles, Edit3, Heart, Zap, Eye, Activity, Dumbbell, Brain, ShieldAlert, Award } from 'lucide-react';
+import { Download, Flame, Shield, Coins, Sparkles, Edit3, Zap, Eye, Activity, Dumbbell, Brain } from 'lucide-react';
 import { toPng } from 'html-to-image';
 
 interface PlayerCardProps {
@@ -28,8 +28,7 @@ export default function PlayerCard({ player, onUpdateProfile }: PlayerCardProps)
   const agiStat = player.stats.find((s) => s.title.toLowerCase().includes('agi'))?.level || Math.max(5, Math.floor(player.level * 1.5));
   const perStat = player.stats.find((s) => s.title.toLowerCase().includes('per'))?.level || Math.max(5, player.streak * 2);
 
-  const maxHp = 500 + vitStat * 35 + player.level * 50;
-  const maxMp = 200 + intStat * 25 + player.level * 20;
+  const xpPercentage = Math.min(100, Math.floor((player.total_xp_earned / xpNextLevel) * 100));
 
   const handleDownloadCard = async () => {
     if (!cardRef.current) return;
@@ -156,48 +155,31 @@ export default function PlayerCard({ player, onUpdateProfile }: PlayerCardProps)
           </div>
         </div>
 
-        {/* Status Gauges: HP / MP / Fatigue Bar */}
-        <div className="relative z-10 bg-cyan-950/30 p-3.5 rounded-lg border border-cyan-500/30 mb-5 space-y-2.5">
-          {/* HP Gauge */}
+        {/* Single XP Progress Gauge Section */}
+        <div className="relative z-10 bg-cyan-950/30 p-4 rounded-lg border border-cyan-500/30 mb-5 space-y-3">
           <div className="flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1 text-emerald-400 w-12 font-bold">
-              <Heart className="w-3.5 h-3.5 fill-emerald-400/20" /> HP
+            <div className="flex items-center gap-1.5 text-cyan-300 w-14 font-bold uppercase tracking-wider">
+              <Zap className="w-4 h-4 text-cyan-400 fill-cyan-400/20 animate-pulse" /> XP
             </div>
-            <div className="flex-1 h-3.5 bg-slate-950 rounded-full border border-emerald-500/40 p-0.5 overflow-hidden">
+            <div className="flex-1 h-4 bg-slate-950 rounded-full border border-cyan-500/50 p-0.5 overflow-hidden shadow-[0_0_10px_rgba(6,182,212,0.2)]">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-500"
-                style={{ width: '100%' }}
+                className="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-purple-500 rounded-full shadow-[0_0_12px_rgba(6,182,212,0.6)] transition-all duration-500"
+                style={{ width: `${xpPercentage}%` }}
               />
             </div>
-            <span className="text-[11px] font-mono text-emerald-300 w-24 text-right font-bold">
-              {maxHp} / {maxHp}
+            <span className="text-xs font-mono text-cyan-300 font-bold">
+              {player.total_xp_earned} / {xpNextLevel} XP
             </span>
           </div>
 
-          {/* MP Gauge */}
-          <div className="flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1 text-cyan-400 w-12 font-bold">
-              <Zap className="w-3.5 h-3.5 fill-cyan-400/20" /> MP
-            </div>
-            <div className="flex-1 h-3.5 bg-slate-950 rounded-full border border-cyan-500/40 p-0.5 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.5)] transition-all duration-500"
-                style={{ width: '100%' }}
-              />
-            </div>
-            <span className="text-[11px] font-mono text-cyan-300 w-24 text-right font-bold">
-              {maxMp} / {maxMp}
-            </span>
-          </div>
-
-          {/* Fatigue Gauge */}
-          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-cyan-500/10">
+          {/* Fatigue Status Line */}
+          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-cyan-500/10 font-mono">
             <div className="flex items-center gap-1 text-slate-300">
               <Activity className="w-3.5 h-3.5 text-cyan-400" />
               <span>FATIGUE: <strong className="text-white">0</strong></span>
             </div>
-            <div className="text-purple-400 font-bold text-[10px]">
-              XP TO NEXT LV: {player.total_xp_earned} / {xpNextLevel}
+            <div className="text-purple-400 font-bold text-[11px] tracking-wider">
+              XP TO NEXT LV: {player.total_xp_earned} / {xpNextLevel} ({xpPercentage}%)
             </div>
           </div>
         </div>
