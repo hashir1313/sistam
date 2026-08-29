@@ -1,8 +1,9 @@
 # Product Requirements Document (PRD)
 
 ## Project Name: System (Solo Leveling Personal Growth App)
-**Version:** 1.0.0  
-**Status:** Draft / Ready for Development  
+**Version:** 1.2.0  
+**Status:** Implemented & Production-Ready  
+**Tech Stack:** Next.js 16.3.3 (Turbopack), React 19, Neon DB (Serverless PostgreSQL), Drizzle ORM, Better Auth, Tailwind CSS v4, Bun.
 
 ---
 
@@ -12,7 +13,7 @@
 Gamified habit trackers often require users to manually type in every task title, subtask, deadline, and category into the app. For many productivity enthusiasts, physical paper notebooks remain superior for rapid task entry, daily planning, and tactile satisfaction. However, paper notebooks lack progression visualization, long-term analytics, automated coin generation, real-life reward stores, and aesthetic sharing features.
 
 ### 1.2 Solution
-The **System App** bridges paper notebooks with digital gamification. Users complete quests on paper, then log into a sleek *Solo Leveling*-styled web/mobile app to allocate earned XP to custom stats. The app automates level calculations, coin conversions, rank evaluation, streak tracking, and reward redemptions, providing an immersive, shareable "Hunter Status Window".
+The **System App** bridges paper notebooks with digital gamification. Users complete quests on paper, then log into a sleek *Solo Leveling*-styled web app to allocate earned XP to custom stats. The app automates level calculations, coin conversions, rank evaluation, streak tracking, and reward redemptions, providing an immersive, shareable "Hunter Status Window".
 
 ---
 
@@ -24,48 +25,64 @@ The **System App** bridges paper notebooks with digital gamification. Users comp
 
 ## 3. Detailed Feature Specifications
 
-### 3.1 Player Profile & Shareable Player Card (FR-1)
+### 3.1 Better Auth Gateway & User Management (FR-1)
 
 #### Requirements:
-- **Profile Display**:
-  - Display player `avatar` (image preview/upload).
-  - Display `name` (text).
-  - Display `joined` date (formatted string, e.g., "Aug 28, 2026").
-  - Display current `level` (positive integer).
-  - Display `total_xp_earned` (number).
-  - Display `rank` badge (Selection from: `E`, `D`, `C`, `B`, `A`, `S`).
-  - Display current `streak` count (days logged consecutively).
-  - Display available `coins` balance.
-
-- **Shareable Player Card Generator**:
-  - Render a high-contrast futuristic card component showcasing all key profile parameters (`avatar`, `name`, `joined`, `level`, `total_xp_earned`, `rank`, `streak`, and top stats).
-  - Provide an export button to generate an image file (PNG / JPEG) or copy to clipboard for social sharing.
+- **Email & Password Authentication**: Powered by Better Auth with session management via cookies and Next.js server headers.
+- **Sci-Fi Auth UI**: Holographic **ACCESS SYSTEM** (Sign In) and **AWAKEN HUNTER** (Sign Up) interface.
+- **Session-Scoped Player Profiles**: Automatically provisions a Level 1 Rank E Hunter profile and default starter stats (`Strength`, `Intelligence`, `Discipline`, `Vitality`) upon user registration tied to `session.user.id`.
 
 ---
 
-### 3.2 Manual XP Allocation & Coin Generation (FR-2)
+### 3.2 Authentic Solo Leveling STATUS Window (FR-2)
+
+#### Requirements:
+- **STATUS Header & Title Frame**:
+  - Centered holographic `[ STATUS ]` header box with circuit pattern background.
+  - Large numeric level display (`50 LEVEL` / `100 LEVEL`).
+  - Hunter Metadata: `JOB: Shadow Monarch`, `TITLE: The One Who Overcame Adversity`.
+  - Daily Streak indicator (`7d Daily Streak`).
+
+- **Single Level XP Gauge**:
+  - Prominent cyan-to-purple progress bar tracking level progression ($(\text{total\_xp\_earned} / \text{xpNextLevel}) \times 100\%$).
+  - `FATIGUE: 0` indicator.
+
+- **Attribute Matrix Grid (STR, AGI, VIT, INT, PER)**:
+  - `STR`: Strength + level bonus `(+XX)`.
+  - `VIT`: Vitality + level bonus `(+XX)`.
+  - `AGI`: Agility + level bonus `(+XX)`.
+  - `INT`: Intelligence + level bonus `(+XX)`.
+  - `PER`: Perception + level bonus `(+XX)`.
+  - Highlights `Available Ability Points: 0`.
+
+- **Export Status Window**:
+  - Export button generates high-resolution PNG images of the holographic Status Window for social sharing.
+
+---
+
+### 3.3 Manual XP Allocation & Coin Generation (FR-3)
 
 #### Requirements:
 - **Input Form**:
   - Dropdown selector for player stats (e.g., *Strength*, *Intelligence*, *Discipline*, *Vitality*).
-  - Numeric input field for entering earned XP (must be a positive number $> 0$).
-  - Option to create a new stat dynamically (with title).
+  - Numeric input field for entering earned XP ($> 0$).
+  - Dynamic Custom Stat Creator modal.
 
 - **System Processing Logic**:
   1. **Stat Update**:
      $$\text{stat.xp\_earned} = \text{stat.xp\_earned} + \text{XP}_{\text{entered}}$$
-     $$\text{stat.level} = \lfloor \sqrt{\text{stat.xp\_earned} / 10} \rfloor + 1 \quad (\text{or custom stat progression})$$
+     $$\text{stat.level} = \lfloor \sqrt{\text{stat.xp\_earned} / 10} \rfloor + 1$$
   2. **Player XP Update**:
      $$\text{player.total\_xp\_earned} = \text{player.total\_xp\_earned} + \text{XP}_{\text{entered}}$$
   3. **Coin Generation**:
      $$\text{Coins Earned} = \frac{\text{XP}_{\text{entered}}}{10}$$
      $$\text{player.coins} = \text{player.coins} + \text{Coins Earned}$$
   4. **Level-Up Trigger**:
-     Evaluate level-up condition using the formula in Section 3.3.
+     Evaluate level-up condition using the formula in Section 3.4.
 
 ---
 
-### 3.3 Leveling & Rank Promotion Mechanics (FR-3)
+### 3.4 Leveling & Rank Promotion Mechanics (FR-4)
 
 #### Requirements:
 - **Level-Up Formula**:
@@ -75,11 +92,6 @@ The **System App** bridges paper notebooks with digital gamification. Users comp
 
 - **Cumulative Level Threshold**:
   A player levels up whenever their `total_xp_earned` meets or exceeds the required threshold.
-
-  *Example Calculation:*
-  - Level 30 requirement: $30^2 \times 2 = 1,800\text{ XP}$.
-  - If current level is 30 and `total_xp_earned` reaches the threshold required for level 31, `player.level` updates to 31.
-  - Multi-level jump support: If a massive XP entry satisfies multiple level thresholds simultaneously, `player.level` increments accordingly.
 
 - **Automated Rank Evaluation**:
   Player `rank` is automatically evaluated upon level change based on the following scale:
@@ -95,63 +107,48 @@ The **System App** bridges paper notebooks with digital gamification. Users comp
 
 ---
 
-### 3.4 Rewards Store & Redemption System (FR-4)
+### 3.5 Rewards Store & Item Management System (FR-5)
 
 #### Requirements:
-- **Reward Configuration**:
+- **Reward Item Configuration & CRUD**:
   - `title`: Short title of the reward (e.g., "1 Hour Gaming Session").
-  - `description`: Detailed notes or rules.
+  - `description`: Optional notes or rules.
   - `price`: Coin cost required to unlock (number $> 0$).
-  - `capped`: Maximum allowed redemptions within a rolling period (e.g., max 1 per day, 3 per week).
+  - `capped`: Maximum allowed redemptions per period.
+  - `cap_period`: `daily`, `weekly`, `monthly`, or `total`.
+  - **Full Item Management**: Create, Read, Edit (via pencil icon drawer), and Delete custom rewards with real-time Neon DB persistence.
 
 - **Redemption Validation**:
-  - Check if `player.coins >= reward.price`.
-  - Check if usage count within the specified window $< \text{reward.capped}$.
-  - If valid:
-    - Deduct `reward.price` from `player.coins`.
-    - Log redemption timestamp into transaction log.
-    - Show success toast/modal ("Reward Redeemed! Enjoy your reward.").
-  - If invalid:
-    - Disable purchase button and show warning message (e.g., "Insufficient System Coins" or "Cap Reached for Today").
+  - Checks `player.coins >= reward.price`.
+  - Checks if redemptions today $< \text{reward.capped}$.
+  - If valid: Deducts `reward.price` from `player.coins`, records redemption timestamp, and triggers coin sound effect.
 
 ---
 
-### 3.5 Streak Tracking System (FR-5)
+## 4. Architecture & Technical Specifications
 
-#### Requirements:
-- Increments `streak` by $+1$ if XP is logged on a consecutive calendar day.
-- Preserves `streak` if XP was already logged today.
-- Resets `streak` to $1$ if a calendar day is missed without XP logging.
+### 4.1 Database Schema (Neon DB PostgreSQL)
+- **`user`**: `id`, `name`, `email`, `emailVerified` (boolean), `image`, `createdAt`, `updatedAt`.
+- **`session`**: `id`, `expiresAt`, `token`, `ipAddress`, `userAgent`, `userId` (FK -> `user.id`).
+- **`account`**: `id`, `accountId`, `providerId`, `userId` (FK -> `user.id`), `accessToken`, `refreshToken`, `idToken`, `accessTokenExpiresAt`, `refreshTokenExpiresAt`, `scope`, `password`, `issuer`, `createdAt`, `updatedAt`.
+- **`verification`**: `id`, `identifier`, `value`, `expiresAt`, `createdAt`, `updatedAt`.
+- **`player`**: `id`, `userId` (FK -> `user.id`), `avatar`, `name`, `joined`, `level`, `total_xp_earned`, `rank`, `coins`, `streak`.
+- **`player_stat`**: `id`, `playerId` (FK -> `player.id`), `title`, `xp_earned`, `level`.
+- **`reward`**: `id`, `userId` (FK -> `user.id`), `title`, `description`, `price`, `capped`, `cap_period`.
+- **`reward_redemption`**: `id`, `playerId` (FK -> `player.id`), `rewardId` (FK -> `reward.id`), `redeemed_at`.
 
----
-
-## 4. Technical & Non-Functional Requirements
-
-### 4.1 UI / UX Guidelines
-- **Color Palette**: Dark Theme (`#0A0D14`), Neon Electric Blue (`#00F0FF`), Glowing Purple (`#8A2BE2`), Warning Gold (`#FFD700`).
-- **Sound & Haptics (Optional/Configurable)**: System chime sound effect on Level Up and Reward Purchase.
-- **Responsive Layout**: Mobile-first design optimized for smartphone viewing and card sharing.
-
-### 4.2 Security & Data Integrity
-- Validate input bounds (prevent negative XP or invalid level values).
-- Atomic database updates for coins and total XP calculations to avoid race conditions.
+### 4.2 UI / UX Guidelines
+- **Color Palette**: Dark Slate (`#04070E`), Neon Electric Cyan (`#06B6D4`), Glowing Purple (`#8B5CF6`), System Gold (`#F59E0B`), Emerald Health (`#10B981`).
+- **Audio Effects**: Built-in sound synthesis using Web Audio API for XP allocation, level up notifications, and reward purchases.
+- **Responsive Layout**: Mobile-first design with tabbed navigation for small screens.
 
 ---
 
-## 5. Summary Matrix of Data Fields & Operations
+## 5. Summary Matrix of Core Operations
 
-| Entity | Field | Type | Validation / Logic |
-| :--- | :--- | :--- | :--- |
-| **Player** | `avatar` | Image URL / Base64 | Valid image link or default asset |
-| | `name` | String | Non-empty string |
-| | `joined` | Date | System timestamp upon account creation |
-| | `level` | Positive Number | Starts at 1, updated via formula $L^2 \times 2$ |
-| | `total_xp_earned` | Number | Starts at 0, updated by adding entered XP |
-| | `rank` | Enum (`E`,`D`,`C`,`B`,`A`,`S`) | Auto-updated based on `level` |
-| | `coins` | Number | Updated via $\text{XP} / 10$, deducted on shop purchase |
-| | `streak` | Number | Integer counter based on daily log activity |
-| | `stats` | Array of Stat Objects | List of user stats with `title`, `xp_earned`, `level` |
-| **Reward** | `title` | String | Non-empty text |
-| | `description` | String | Optional description text |
-| | `price` | Number | Cost in coins ($> 0$) |
-| | `capped` | Number | Maximum usage cap per period |
+| Feature Area | Operations | Persistence |
+| :--- | :--- | :--- |
+| **Authentication** | Sign Up, Sign In, Sign Out, Session Check | Better Auth + Neon DB |
+| **Status Window** | Level Display, XP Gauge, Attributes, Profile Edit, PNG Export | Neon DB + `html-to-image` |
+| **XP Allocator** | XP Injection, Coin Generation, Custom Stat Creation | Neon DB |
+| **Reward Store** | Catalog View, Create Item, Edit Item, Delete Item, Coin Purchase | Neon DB |
