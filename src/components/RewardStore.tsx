@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import { PlayerData, RewardItem } from '@/lib/types';
-import { ShoppingBag, Coins, Lock, CheckCircle2, Plus, AlertTriangle, Sparkles } from 'lucide-react';
+import { ShoppingBag, Coins, Lock, CheckCircle2, Plus, AlertTriangle, Edit3, Trash2, X, Check } from 'lucide-react';
 
 interface RewardStoreProps {
   player: PlayerData;
   rewards: RewardItem[];
   onPurchaseReward: (rewardId: string) => void;
   onCreateReward: (reward: Omit<RewardItem, 'id' | 'timesRedeemedToday'>) => void;
+  onUpdateReward?: (reward: RewardItem) => void;
+  onDeleteReward?: (rewardId: string) => void;
 }
 
 export default function RewardStore({
@@ -16,8 +18,13 @@ export default function RewardStore({
   rewards,
   onPurchaseReward,
   onCreateReward,
+  onUpdateReward,
+  onDeleteReward,
 }: RewardStoreProps) {
   const [showAddReward, setShowAddReward] = useState(false);
+  const [editingReward, setEditingReward] = useState<RewardItem | null>(null);
+
+  // Form State (New or Edit)
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -37,25 +44,56 @@ export default function RewardStore({
     }, 3500);
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleOpenEdit = (reward: RewardItem) => {
+    setEditingReward(reward);
+    setTitle(reward.title);
+    setDescription(reward.description || '');
+    setPrice(reward.price.toString());
+    setCapped(reward.capped.toString());
+    setCapPeriod(reward.cap_period || 'daily');
+    setShowAddReward(false);
+  };
+
+  const handleSaveCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const priceNum = parseFloat(price);
     const capNum = parseInt(capped, 10);
     if (!title.trim() || isNaN(priceNum) || priceNum <= 0 || isNaN(capNum) || capNum < 1) return;
 
-    onCreateReward({
-      title: title.trim(),
-      description: description.trim(),
-      price: priceNum,
-      capped: capNum,
-      cap_period: capPeriod,
-    });
+    if (editingReward) {
+      if (onUpdateReward) {
+        onUpdateReward({
+          ...editingReward,
+          title: title.trim(),
+          description: description.trim(),
+          price: priceNum,
+          capped: capNum,
+          cap_period: capPeriod,
+        });
+      }
+      setEditingReward(null);
+    } else {
+      onCreateReward({
+        title: title.trim(),
+        description: description.trim(),
+        price: priceNum,
+        capped: capNum,
+        cap_period: capPeriod,
+      });
+      setShowAddReward(false);
+    }
 
     setTitle('');
     setDescription('');
     setPrice('');
     setCapped('1');
-    setShowAddReward(false);
+  };
+
+  const handleDelete = (rewardId: string) => {
+    if (confirm('Are you sure you want to delete this reward item?')) {
+      if (onDeleteReward) onDeleteReward(rewardId);
+      if (editingReward?.id === rewardId) setEditingReward(null);
+    }
   };
 
   return (
@@ -77,7 +115,14 @@ export default function RewardStore({
             {player.coins.toLocaleString()} Coins
           </div>
           <button
-            onClick={() => setShowAddReward(!showAddReward)}
+            onClick={() => {
+              setEditingReward(null);
+              setTitle('');
+              setDescription('');
+              setPrice('');
+              setCapped('1');
+              setShowAddReward(!showAddReward);
+            }}
             className="text-xs font-mono bg-slate-900 border border-amber-500/40 hover:border-amber-400 text-slate-200 px-3 py-1.5 rounded flex items-center gap-1 font-bold transition-all"
           >
             <Plus className="w-3.5 h-3.5 text-amber-400" />
@@ -86,10 +131,25 @@ export default function RewardStore({
         </div>
       </div>
 
-      {/* Add New Reward Form */}
-      {showAddReward && (
-        <form onSubmit={handleCreate} className="mb-5 bg-slate-950/95 p-4 rounded-lg border border-amber-500/50 space-y-3 relative z-20">
-          <h4 className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">Create System Item Reward</h4>
+      {/* Add / Edit Reward Form */}
+      {(showAddReward || editingReward) && (
+        <form onSubmit={handleSaveCreate} className="mb-5 bg-slate-950/95 p-4 rounded-lg border border-amber-500/50 space-y-3 relative z-20 shadow-gold-glow">
+          <div className="flex justify-between items-center border-b border-amber-500/30 pb-2">
+            <h4 className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">
+              {editingReward ? 'Edit System Reward Item' : 'Create Custom Item Reward'}
+            </h4>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddReward(false);
+                setEditingReward(null);
+              }}
+              className="text-slate-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-mono text-slate-400 block mb-1 uppercase">Item Title</label>
@@ -153,12 +213,26 @@ export default function RewardStore({
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold uppercase text-xs rounded shadow-gold-glow"
-          >
-            Save Custom Item Reward
-          </button>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="submit"
+              className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold uppercase text-xs rounded shadow-gold-glow flex items-center justify-center gap-1"
+            >
+              <Check className="w-4 h-4 font-bold" />
+              {editingReward ? 'Save Reward Changes' : 'Create Custom Reward'}
+            </button>
+
+            {editingReward && (
+              <button
+                type="button"
+                onClick={() => handleDelete(editingReward.id)}
+                className="px-3 py-2 bg-red-950/80 border border-red-500/50 hover:bg-red-900/80 text-red-400 text-xs rounded font-bold flex items-center gap-1"
+                title="Delete Reward Item"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </form>
       )}
 
@@ -181,20 +255,31 @@ export default function RewardStore({
           return (
             <div
               key={reward.id}
-              className={`bg-slate-950/80 p-4 rounded-lg border transition-all flex flex-col justify-between ${
+              className={`bg-slate-950/80 p-4 rounded-lg border transition-all flex flex-col justify-between relative group ${
                 canBuy
                   ? 'border-amber-500/50 hover:border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
                   : 'border-slate-800 opacity-75'
               }`}
             >
               <div>
-                <div className="flex justify-between items-start mb-1.5">
-                  <h4 className="text-sm font-bold text-slate-100 font-sans">{reward.title}</h4>
-                  <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">
-                    <Coins className="w-3.5 h-3.5 text-amber-400" />
-                    {reward.price}
-                  </span>
+                <div className="flex justify-between items-start mb-1.5 gap-2">
+                  <h4 className="text-sm font-bold text-slate-100 font-sans flex-1">{reward.title}</h4>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleOpenEdit(reward)}
+                      className="p-1 rounded bg-slate-900 border border-slate-800 hover:border-amber-400 text-slate-400 hover:text-amber-400 transition-colors"
+                      title="Edit Reward"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">
+                      <Coins className="w-3.5 h-3.5 text-amber-400" />
+                      {reward.price}
+                    </span>
+                  </div>
                 </div>
+
                 {reward.description && (
                   <p className="text-xs text-slate-400 mb-3 leading-relaxed font-sans">{reward.description}</p>
                 )}

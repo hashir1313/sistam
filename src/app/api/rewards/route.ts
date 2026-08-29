@@ -163,6 +163,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true });
     }
 
+    if (action === 'update_reward') {
+      await db
+        .update(reward)
+        .set({
+          title,
+          description: description || '',
+          price: Number(price),
+          capped: Number(capped) || 1,
+          capPeriod: capPeriod || cap_period || 'daily',
+        })
+        .where(eq(reward.id, rewardId));
+
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'delete_reward') {
+      await db.delete(reward).where(eq(reward.id, rewardId));
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (err: any) {
     console.error('Failed reward operation:', err);

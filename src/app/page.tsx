@@ -314,6 +314,53 @@ export default function Home() {
     setRewards((prev) => [...prev, rewardItem]);
   };
 
+  // Handler: Update Existing Reward
+  const handleUpdateReward = async (updatedReward: RewardItem) => {
+    if (dbConnected) {
+      try {
+        await fetch('/api/rewards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_reward',
+            rewardId: updatedReward.id,
+            title: updatedReward.title,
+            description: updatedReward.description,
+            price: updatedReward.price,
+            capped: updatedReward.capped,
+            cap_period: updatedReward.cap_period,
+          }),
+        });
+        await loadData();
+        return;
+      } catch (e) {}
+    }
+
+    setRewards((prev) =>
+      prev.map((r) => (r.id === updatedReward.id ? { ...r, ...updatedReward } : r))
+    );
+  };
+
+  // Handler: Delete Reward
+  const handleDeleteReward = async (rewardId: string) => {
+    if (dbConnected) {
+      try {
+        await fetch('/api/rewards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete_reward',
+            rewardId,
+          }),
+        });
+        await loadData();
+        return;
+      } catch (e) {}
+    }
+
+    setRewards((prev) => prev.filter((r) => r.id !== rewardId));
+  };
+
   // Handler: Reset System Data to Default
   const handleResetData = () => {
     if (confirm('Are you sure you want to reset all System stats and rewards?')) {
@@ -427,6 +474,8 @@ export default function Home() {
                 rewards={rewards}
                 onPurchaseReward={handlePurchaseReward}
                 onCreateReward={handleCreateReward}
+                onUpdateReward={handleUpdateReward}
+                onDeleteReward={handleDeleteReward}
               />
             </div>
           </div>
