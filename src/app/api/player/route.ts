@@ -3,6 +3,8 @@ import { db } from '@/db';
 import { player, playerStat, user } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { evaluateLevelUp, calculateCoinsFromXp } from '@/lib/formulas';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 export async function GET() {
   if (!db) {
@@ -10,52 +12,43 @@ export async function GET() {
   }
 
   try {
-    // 1. Fetch or create default player record
-    let players = await db.select().from(player).limit(1);
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    const targetUserId = session?.user?.id;
+
+    // 1. Fetch or create player record for the authenticated user
+    let players = targetUserId
+      ? await db.select().from(player).where(eq(player.userId, targetUserId)).limit(1)
+      : await db.select().from(player).limit(1);
     
-    if (players.length === 0) {
-      // Ensure default user exists
-      let users = await db.select().from(user).limit(1);
-      if (users.length === 0) {
-        const defaultUserId = crypto.randomUUID();
-        const [newUser] = await db
-          .insert(user)
-          .values({
-            id: defaultUserId,
-            name: 'Sung Jin-Woo',
-            email: 'hunter@system.local',
-            emailVerified: 1,
-            image: 'https://api.dicebear.com/7.x/bottts/svg?seed=SungJinWoo',
-          })
-          .returning();
-        users = [newUser];
-      }
-
-      const defaultUser = users[0];
-
+    if (players.length === 0 && targetUserId) {
       const [newPlayer] = await db
         .insert(player)
         .values({
-          userId: defaultUser.id,
-          name: 'Sung Jin-Woo',
-          avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SungJinWoo',
-          level: 30,
-          totalXpEarned: 1750,
-          rank: 'C',
-          coins: 175,
-          streak: 7,
+          userId: targetUserId,
+          name: session?.user?.name || 'Hunter',
+          avatar: session?.user?.image || `https://api.dicebear.com/7.x/bottts/svg?seed=${targetUserId}`,
+          level: 1,
+          totalXpEarned: 0,
+          rank: 'E',
+          coins: 0,
+          streak: 1,
         })
         .returning();
 
-      // Create default stats
+      // Create default starter stats
       await db.insert(playerStat).values([
-        { playerId: newPlayer.id, title: 'Strength', xpEarned: 600, level: 7 },
-        { playerId: newPlayer.id, title: 'Intelligence', xpEarned: 550, level: 6 },
-        { playerId: newPlayer.id, title: 'Discipline', xpEarned: 400, level: 5 },
-        { playerId: newPlayer.id, title: 'Vitality', xpEarned: 200, level: 3 },
+        { playerId: newPlayer.id, title: 'Strength', xpEarned: 0, level: 1 },
+        { playerId: newPlayer.id, title: 'Intelligence', xpEarned: 0, level: 1 },
+        { playerId: newPlayer.id, title: 'Discipline', xpEarned: 0, level: 1 },
+        { playerId: newPlayer.id, title: 'Vitality', xpEarned: 0, level: 1 },
       ]);
 
       players = [newPlayer];
+    } else if (players.length === 0) {
+      return NextResponse.json({ connected: true, player: null });
     }
 
     const currentPlayer = players[0];
@@ -89,8 +82,7 @@ export async function GET() {
       },
     });
   } catch (err: any) {
-    // Graceful fallback when Neon DB URL is unreachable or placeholder
-    console.warn('Neon DB connection offline or unreachable. Falling back to Local Mode:', err?.message || err);
+    console.warn('Neon DB connection offline or unreachable:', err?.message || err);
     return NextResponse.json({ connected: false, message: 'Neon DB offline' }, { status: 200 });
   }
 }

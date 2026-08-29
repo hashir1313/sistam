@@ -6,10 +6,12 @@ import PlayerCard from '@/components/PlayerCard';
 import StatAllocator from '@/components/StatAllocator';
 import RewardStore from '@/components/RewardStore';
 import LevelUpModal from '@/components/LevelUpModal';
+import AuthGateway from '@/components/AuthGateway';
 import { PlayerData, RewardItem } from '@/lib/types';
 import { calculateCoinsFromXp, evaluateLevelUp, RankType } from '@/lib/formulas';
 import { systemAudio } from '@/lib/sound';
-import { BookOpen, RefreshCw, Database, HardDrive } from 'lucide-react';
+import { authClient } from '@/lib/auth-client';
+import { BookOpen, RefreshCw, Database, HardDrive, Shield, Loader2 } from 'lucide-react';
 
 const INITIAL_PLAYER: PlayerData = {
   id: 'player-1',
@@ -63,6 +65,8 @@ const LOCAL_STORAGE_PLAYER_KEY = 'sololeveling_player_data';
 const LOCAL_STORAGE_REWARDS_KEY = 'sololeveling_rewards_data';
 
 export default function Home() {
+  const { data: session, isPending: isSessionLoading } = authClient.useSession();
+
   const [player, setPlayer] = useState<PlayerData>(INITIAL_PLAYER);
   const [rewards, setRewards] = useState<RewardItem[]>(INITIAL_REWARDS);
   const [activeTab, setActiveTab] = useState<'card' | 'allocator' | 'store'>('card');
@@ -82,45 +86,40 @@ export default function Home() {
     levelsGained: 0,
   });
 
-  // Load player & reward data (Neon DB or LocalStorage fallback)
+  const loadData = async () => {
+    try {
+      const playerRes = await fetch('/api/player');
+      const playerData = await playerRes.json();
+
+      if (playerData.connected && playerData.player) {
+        setDbConnected(true);
+        setPlayer(playerData.player);
+
+        const rewardsRes = await fetch('/api/rewards');
+        const rewardsData = await rewardsRes.json();
+        if (rewardsData.rewards) {
+          setRewards(rewardsData.rewards);
+        }
+        return;
+      }
+    } catch (e) {}
+
+    setDbConnected(false);
+    try {
+      const savedPlayer = localStorage.getItem(LOCAL_STORAGE_PLAYER_KEY);
+      const savedRewards = localStorage.getItem(LOCAL_STORAGE_REWARDS_KEY);
+
+      if (savedPlayer) setPlayer(JSON.parse(savedPlayer));
+      if (savedRewards) setRewards(JSON.parse(savedRewards));
+    } catch (e) {}
+  };
+
   useEffect(() => {
     setIsMounted(true);
-
-    async function loadData() {
-      try {
-        const playerRes = await fetch('/api/player');
-        const playerData = await playerRes.json();
-
-        if (playerData.connected && playerData.player) {
-          setDbConnected(true);
-          setPlayer(playerData.player);
-
-          const rewardsRes = await fetch('/api/rewards');
-          const rewardsData = await rewardsRes.json();
-          if (rewardsData.rewards) {
-            setRewards(rewardsData.rewards);
-          }
-          return;
-        }
-      } catch (e) {
-        // DB not connected or error
-      }
-
-      setDbConnected(false);
-      // Fallback to LocalStorage
-      try {
-        const savedPlayer = localStorage.getItem(LOCAL_STORAGE_PLAYER_KEY);
-        const savedRewards = localStorage.getItem(LOCAL_STORAGE_REWARDS_KEY);
-
-        if (savedPlayer) setPlayer(JSON.parse(savedPlayer));
-        if (savedRewards) setRewards(JSON.parse(savedRewards));
-      } catch (e) {
-        console.warn('LocalStorage error:', e);
-      }
+    if (session) {
+      loadData();
     }
-
-    loadData();
-  }, []);
+  }, [session]);
 
   // Sync LocalStorage backup on state changes
   useEffect(() => {
@@ -130,6 +129,21 @@ export default function Home() {
       localStorage.setItem(LOCAL_STORAGE_REWARDS_KEY, JSON.stringify(rewards));
     } catch (e) {}
   }, [player, rewards, isMounted, dbConnected]);
+
+  // If loading session state
+  if (!isMounted || isSessionLoading) {
+    return (
+      <div className="min-h-screen bg-[#070A10] text-cyan-400 font-mono flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+        <p className="text-xs uppercase tracking-widest animate-pulse">AUTHENTICATING SYSTEM HUNTER...</p>
+      </div>
+    );
+  }
+
+  // If user is NOT logged in -> Show Auth Gateway
+  if (!session) {
+    return <AuthGateway onSuccess={() => loadData()} />;
+  }
 
   // Handler: Add XP to Stat & Process Coins + Level Up
   const handleAddXp = async (statId: string, xpAmount: number) => {
@@ -159,18 +173,12 @@ export default function Home() {
               levelsGained: 1,
             });
           }
-          // Reload fresh data from Neon DB
-          const freshRes = await fetch('/api/player');
-          const freshData = await freshRes.json();
-          if (freshData.player) setPlayer(freshData.player);
+          await loadData();
           return;
         }
-      } catch (e) {
-        console.warn('DB Post XP error, applying local state:', e);
-      }
+      } catch (e) {}
     }
 
-    // Local state calculation fallback
     setPlayer((prevPlayer) => {
       const updatedStats = prevPlayer.stats.map((stat) => {
         if (stat.id === statId) {
@@ -218,9 +226,7 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'create_stat', playerId: player.id, title }),
         });
-        const freshRes = await fetch('/api/player');
-        const freshData = await freshRes.json();
-        if (freshData.player) setPlayer(freshData.player);
+        await loadData();
         return;
       } catch (e) {}
     }
@@ -266,10 +272,7 @@ export default function Home() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'purchase_reward', playerId: player.id, rewardId }),
           });
-          const freshPlayer = await (await fetch('/api/player')).json();
-          const freshRewards = await (await fetch('/api/rewards')).json();
-          if (freshPlayer.player) setPlayer(freshPlayer.player);
-          if (freshRewards.rewards) setRewards(freshRewards.rewards);
+          await loadData();
           return;
         } catch (e) {}
       }
@@ -298,8 +301,7 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'create_reward', ...newReward }),
         });
-        const freshRewards = await (await fetch('/api/rewards')).json();
-        if (freshRewards.rewards) setRewards(freshRewards.rewards);
+        await loadData();
         return;
       } catch (e) {}
     }
@@ -325,7 +327,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#070A10] text-slate-100 pb-16">
       {/* Top HUD Banner */}
-      <HUDHeader player={player} />
+      <HUDHeader player={player} onSignOut={() => window.location.reload()} />
 
       {/* Main Content Area */}
       <div className="max-w-6xl mx-auto px-4 pt-6 space-y-6">
@@ -394,7 +396,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Grid Container with CSS responsive visibility */}
+        {/* Grid Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Column 1: Player Card */}
           <div
