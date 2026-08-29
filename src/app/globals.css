@@ -19,16 +19,22 @@
 
 /* Custom Cyberpunk Neon & Solo Leveling HUD Styling */
 .system-card {
-  background: linear-gradient(135deg, rgba(13, 18, 31, 0.95) 0%, rgba(7, 10, 16, 0.98) 100%);
-  border: 1px solid rgba(0, 240, 255, 0.25);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, rgba(8, 14, 28, 0.95) 0%, rgba(4, 7, 14, 0.98) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.15), inset 0 0 15px rgba(6, 182, 212, 0.05);
+  backdrop-filter: blur(12px);
+}
+
+.system-status-box {
+  background: linear-gradient(180deg, rgba(10, 20, 40, 0.9) 0%, rgba(5, 10, 22, 0.95) 100%);
+  border: 1.5px solid rgba(6, 182, 212, 0.45);
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.2), inset 0 0 20px rgba(6, 182, 212, 0.08);
 }
 
 .system-card-gold {
   background: linear-gradient(135deg, rgba(31, 23, 13, 0.95) 0%, rgba(16, 12, 7, 0.98) 100%);
   border: 1px solid rgba(245, 158, 11, 0.35);
-  box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
 }
 
 .neon-border-glow {
@@ -36,7 +42,11 @@
 }
 
 .neon-text-glow {
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.3);
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.8), 0 0 25px rgba(6, 182, 212, 0.4);
+}
+
+.green-text-glow {
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.8), 0 0 15px rgba(34, 197, 94, 0.4);
 }
 
 .gold-text-glow {
@@ -44,7 +54,7 @@
 }
 
 .purple-text-glow {
-  text-shadow: 0 0 8px rgba(139, 92, 246, 0.6), 0 0 20px rgba(139, 92, 246, 0.3);
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 0 0 25px rgba(168, 85, 247, 0.4);
 }
 
 .clip-corner {
@@ -58,6 +68,28 @@
   );
 }
 
+/* Solo Leveling Holographic Corner Frame */
+.holo-frame {
+  position: relative;
+}
+.holo-frame::before {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  background: linear-gradient(90deg, #06b6d4, #3b82f6, #8b5cf6, #06b6d4);
+  background-size: 300% 300%;
+  z-index: -1;
+  border-radius: 0.75rem;
+  animation: borderAnimation 6s ease infinite;
+  opacity: 0.4;
+}
+
+@keyframes borderAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* Rank Badges */
 .rank-badge-E { background-color: rgba(148, 163, 184, 0.2); color: #CBD5E1; border: 1px solid #94A3B8; }
 .rank-badge-D { background-color: rgba(34, 197, 94, 0.2); color: #4ADE80; border: 1px solid #22C55E; box-shadow: 0 0 10px rgba(34, 197, 94, 0.3); }
@@ -69,7 +101,7 @@
 /* Animation Keyframes */
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.03); }
+  50% { opacity: 1; transform: scale(1.02); }
 }
 
 .animate-pulse-glow {

@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { PlayerData } from '@/lib/types';
 import { getXpRequiredForNextLevel } from '@/lib/formulas';
-import { Download, Flame, Shield, Coins, Sparkles, Edit3, Check, X } from 'lucide-react';
+import { Download, Flame, Shield, Coins, Sparkles, Edit3, Heart, Zap, Eye, Activity, Dumbbell, Brain, ShieldAlert, Award } from 'lucide-react';
 import { toPng } from 'html-to-image';
 
 interface PlayerCardProps {
@@ -21,17 +21,27 @@ export default function PlayerCard({ player, onUpdateProfile }: PlayerCardProps)
   const xpNextLevel = getXpRequiredForNextLevel(player.level);
   const rankClass = `rank-badge-${player.rank}`;
 
+  // Derived Stats from Player Level & Allocation
+  const strStat = player.stats.find((s) => s.title.toLowerCase().includes('str'))?.level || player.stats[0]?.level || 10;
+  const intStat = player.stats.find((s) => s.title.toLowerCase().includes('int'))?.level || player.stats[1]?.level || 10;
+  const vitStat = player.stats.find((s) => s.title.toLowerCase().includes('vit') || s.title.toLowerCase().includes('disc'))?.level || player.stats[3]?.level || 10;
+  const agiStat = player.stats.find((s) => s.title.toLowerCase().includes('agi'))?.level || Math.max(5, Math.floor(player.level * 1.5));
+  const perStat = player.stats.find((s) => s.title.toLowerCase().includes('per'))?.level || Math.max(5, player.streak * 2);
+
+  const maxHp = 500 + vitStat * 35 + player.level * 50;
+  const maxMp = 200 + intStat * 25 + player.level * 20;
+
   const handleDownloadCard = async () => {
     if (!cardRef.current) return;
     try {
       setIsExporting(true);
       const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
       const link = document.createElement('a');
-      link.download = `${player.name.replace(/\s+/g, '_')}_Hunter_Card.png`;
+      link.download = `${player.name.replace(/\s+/g, '_')}_Hunter_Status.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
-      console.error('Failed to export card image:', err);
+      console.error('Failed to export status window:', err);
     } finally {
       setIsExporting(false);
     }
@@ -46,43 +56,38 @@ export default function PlayerCard({ player, onUpdateProfile }: PlayerCardProps)
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto flex flex-col items-center gap-4">
-      {/* Shareable Card Canvas Container */}
+    <div className="w-full max-w-xl mx-auto flex flex-col items-center gap-4 font-mono">
+      {/* Authentic Solo Leveling STATUS Holographic Window Frame */}
       <div
         ref={cardRef}
-        className="w-full relative system-card rounded-xl p-6 border-2 border-cyan-500/40 shadow-system-glow clip-corner text-slate-100 overflow-hidden"
+        className="w-full relative system-status-box rounded-xl p-6 border-2 border-cyan-400/60 shadow-[0_0_30px_rgba(6,182,212,0.25)] text-slate-100 overflow-hidden"
       >
-        {/* Background Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293d0a_1px,transparent_1px),linear-gradient(to_bottom,#1f293d0a_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Futuristic Circuit & Grid Pattern Overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d40d_1px,transparent_1px),linear-gradient(to_bottom,#06b6d40d_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Card Header: Title & Rank */}
-        <div className="flex items-center justify-between border-b border-cyan-500/20 pb-4 mb-5 relative z-10">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-cyan-400 animate-pulse" />
-            <span className="font-bold tracking-widest text-xs uppercase text-cyan-400 font-mono">
-              SYSTEM // HUNTER STATUS CARD
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
+        {/* Top Centered STATUS Header Box */}
+        <div className="flex justify-center border-b border-cyan-500/30 pb-4 mb-5 relative z-10">
+          <div className="relative group">
+            <div className="px-10 py-1.5 border border-cyan-400 bg-cyan-950/60 text-cyan-300 text-sm font-bold uppercase tracking-[0.25em] font-mono shadow-[0_0_15px_rgba(6,182,212,0.4)] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+              STATUS
+            </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="p-1 rounded bg-slate-900 border border-slate-700 text-slate-400 hover:text-cyan-400 transition-colors"
+              className="absolute right-[-32px] top-1.5 p-1 rounded bg-slate-900 border border-slate-700 text-slate-400 hover:text-cyan-400 transition-colors"
               title="Edit Profile Name & Avatar"
             >
               <Edit3 className="w-3.5 h-3.5" />
             </button>
-            <div className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${rankClass}`}>
-              RANK {player.rank}
-            </div>
           </div>
         </div>
 
-        {/* Profile Edit Drawer */}
+        {/* Profile Edit Form Drawer */}
         {isEditing && (
-          <form onSubmit={handleSaveProfile} className="mb-5 p-3.5 bg-slate-950/90 rounded-lg border border-cyan-500/40 space-y-3 relative z-20">
-            <div className="text-xs font-mono text-cyan-400 font-bold uppercase">Edit Profile</div>
+          <form onSubmit={handleSaveProfile} className="mb-5 p-3.5 bg-slate-950/95 rounded-lg border border-cyan-400/50 space-y-3 relative z-30 shadow-system-glow">
+            <div className="text-xs font-mono text-cyan-400 font-bold uppercase">Edit Hunter Identity</div>
             <div>
               <label className="text-[10px] font-mono text-slate-400 block mb-1">Hunter Name</label>
               <input
@@ -113,100 +118,158 @@ export default function PlayerCard({ player, onUpdateProfile }: PlayerCardProps)
                 type="submit"
                 className="px-3 py-1 bg-cyan-500 text-slate-950 font-bold text-xs rounded hover:bg-cyan-400"
               >
-                Save Changes
+                Save Identity
               </button>
             </div>
           </form>
         )}
 
-        {/* Avatar & Player Info */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 mb-6">
-          <div className="relative">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border-2 border-cyan-400 shadow-system-glow bg-slate-950 p-1">
-              <img
-                src={player.avatar}
-                alt={player.name}
-                className="w-full h-full object-cover rounded-lg"
+        {/* Level Counter & Metadata Header */}
+        <div className="flex items-center justify-between border-b border-cyan-500/20 pb-5 mb-5 relative z-10 px-2">
+          {/* Big Level Display */}
+          <div className="flex items-baseline gap-3">
+            <span className="text-6xl font-black tracking-tight text-white font-mono neon-text-glow">
+              {player.level}
+            </span>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest">LEVEL</span>
+              <div className={`mt-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${rankClass}`}>
+                RANK {player.rank}
+              </div>
+            </div>
+          </div>
+
+          {/* Job & Title Info */}
+          <div className="text-right space-y-1.5">
+            <div className="text-xs text-slate-300">
+              <span className="text-slate-400 uppercase text-[10px] tracking-wider mr-2">JOB:</span>
+              <span className="font-bold text-cyan-300">Shadow Monarch</span>
+            </div>
+            <div className="text-xs text-slate-300">
+              <span className="text-slate-400 uppercase text-[10px] tracking-wider mr-2">TITLE:</span>
+              <span className="font-bold text-sky-200">The One Who Overcame Adversity</span>
+            </div>
+            <div className="text-[10px] text-amber-400 flex items-center justify-end gap-1 font-bold">
+              <Flame className="w-3 h-3 text-amber-500" />
+              {player.streak}d Daily Streak
+            </div>
+          </div>
+        </div>
+
+        {/* Status Gauges: HP / MP / Fatigue Bar */}
+        <div className="relative z-10 bg-cyan-950/30 p-3.5 rounded-lg border border-cyan-500/30 mb-5 space-y-2.5">
+          {/* HP Gauge */}
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1 text-emerald-400 w-12 font-bold">
+              <Heart className="w-3.5 h-3.5 fill-emerald-400/20" /> HP
+            </div>
+            <div className="flex-1 h-3.5 bg-slate-950 rounded-full border border-emerald-500/40 p-0.5 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-500"
+                style={{ width: '100%' }}
               />
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-slate-900 border border-amber-500/50 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 flex items-center gap-1">
-              <Flame className="w-3 h-3 text-amber-500" />
-              {player.streak}d Streak
-            </div>
-          </div>
-
-          <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-2xl font-extrabold tracking-tight text-white flex items-center justify-center sm:justify-start gap-2">
-              {player.name}
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5 font-mono">
-              Joined System: {player.joined}
-            </p>
-
-            <div className="mt-4 grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
-              <div>
-                <span className="text-[10px] uppercase text-slate-400 font-mono block">Player Level</span>
-                <span className="text-xl font-black text-cyan-400 font-mono">LV. {player.level}</span>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase text-slate-400 font-mono block">Total XP</span>
-                <span className="text-xl font-black text-purple-400 font-mono">
-                  {player.total_xp_earned.toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Level XP Progress Bar */}
-        <div className="relative z-10 mb-6 bg-slate-950/80 p-3 rounded-lg border border-cyan-500/20">
-          <div className="flex justify-between items-center text-xs font-mono text-slate-300 mb-1.5">
-            <span>XP To Next Level</span>
-            <span className="text-cyan-400 font-bold">
-              {player.total_xp_earned} / {xpNextLevel} XP
+            <span className="text-[11px] font-mono text-emerald-300 w-24 text-right font-bold">
+              {maxHp} / {maxHp}
             </span>
           </div>
-          <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-            <div
-              className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full transition-all duration-500 shadow-system-glow"
-              style={{
-                width: `${Math.min(100, (player.total_xp_earned / xpNextLevel) * 100)}%`,
-              }}
-            />
-          </div>
-        </div>
 
-        {/* Player Stats Grid */}
-        <div className="relative z-10 bg-slate-950/40 p-4 rounded-lg border border-slate-800">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono mb-3 flex items-center gap-1.5">
-            <Shield className="w-4 h-4 text-cyan-400" />
-            ATTRIBUTES & STAT LEVELS
-          </h3>
-          <div className="grid grid-cols-2 gap-2.5">
-            {player.stats.map((stat) => (
+          {/* MP Gauge */}
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1 text-cyan-400 w-12 font-bold">
+              <Zap className="w-3.5 h-3.5 fill-cyan-400/20" /> MP
+            </div>
+            <div className="flex-1 h-3.5 bg-slate-950 rounded-full border border-cyan-500/40 p-0.5 overflow-hidden">
               <div
-                key={stat.id}
-                className="bg-slate-900/80 p-2.5 rounded border border-slate-800/80 flex items-center justify-between"
-              >
-                <div>
-                  <div className="text-xs font-semibold text-slate-200">{stat.title}</div>
-                  <div className="text-[10px] text-slate-400 font-mono">{stat.xp_earned} XP</div>
-                </div>
-                <div className="text-sm font-bold text-cyan-400 font-mono">
-                  LV.{stat.level}
-                </div>
-              </div>
-            ))}
+                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.5)] transition-all duration-500"
+                style={{ width: '100%' }}
+              />
+            </div>
+            <span className="text-[11px] font-mono text-cyan-300 w-24 text-right font-bold">
+              {maxMp} / {maxMp}
+            </span>
+          </div>
+
+          {/* Fatigue Gauge */}
+          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-cyan-500/10">
+            <div className="flex items-center gap-1 text-slate-300">
+              <Activity className="w-3.5 h-3.5 text-cyan-400" />
+              <span>FATIGUE: <strong className="text-white">0</strong></span>
+            </div>
+            <div className="text-purple-400 font-bold text-[10px]">
+              XP TO NEXT LV: {player.total_xp_earned} / {xpNextLevel}
+            </div>
           </div>
         </div>
 
-        {/* Footer Info */}
-        <div className="mt-5 pt-3 border-t border-slate-800/60 flex justify-between items-center text-[10px] font-mono text-slate-500 relative z-10">
-          <div className="flex items-center gap-1 text-amber-400 font-semibold">
-            <Coins className="w-3.5 h-3.5" />
+        {/* Solo Leveling Attribute Matrix Grid (STR, AGI, VIT, INT, PER) */}
+        <div className="relative z-10 bg-slate-950/60 p-4 rounded-lg border border-cyan-500/30 mb-4 space-y-3">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm font-mono">
+            {/* STR */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Dumbbell className="w-4 h-4 text-cyan-400" />
+                <span className="font-bold">STR:</span>
+                <span className="text-white font-extrabold text-base">{80 + strStat}</span>
+              </div>
+              <span className="text-emerald-400 text-xs font-bold green-text-glow">(+{strStat})</span>
+            </div>
+
+            {/* VIT */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <span className="font-bold">VIT:</span>
+                <span className="text-white font-extrabold text-base">{50 + vitStat}</span>
+              </div>
+              <span className="text-emerald-400 text-xs font-bold green-text-glow">(+{vitStat})</span>
+            </div>
+
+            {/* AGI */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Activity className="w-4 h-4 text-sky-400" />
+                <span className="font-bold">AGI:</span>
+                <span className="text-white font-extrabold text-base">{60 + agiStat}</span>
+              </div>
+              <span className="text-emerald-400 text-xs font-bold green-text-glow">(+{agiStat})</span>
+            </div>
+
+            {/* INT */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Brain className="w-4 h-4 text-purple-400" />
+                <span className="font-bold">INT:</span>
+                <span className="text-white font-extrabold text-base">{50 + intStat}</span>
+              </div>
+              <span className="text-emerald-400 text-xs font-bold green-text-glow">(+{intStat})</span>
+            </div>
+
+            {/* PER */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 col-span-2 sm:col-span-1">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Eye className="w-4 h-4 text-amber-400" />
+                <span className="font-bold">PER:</span>
+                <span className="text-white font-extrabold text-base">{60 + perStat}</span>
+              </div>
+              <span className="text-emerald-400 text-xs font-bold green-text-glow">(+{perStat})</span>
+            </div>
+
+            {/* Available Ability Points */}
+            <div className="flex flex-col justify-end items-end col-span-2 sm:col-span-1 text-right">
+              <span className="text-[10px] text-slate-400 uppercase tracking-widest">Available Ability Points</span>
+              <span className="text-xl font-extrabold text-cyan-400 neon-text-glow font-mono">0</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Info & System Coins */}
+        <div className="mt-4 pt-3 border-t border-cyan-500/20 flex justify-between items-center text-xs font-mono relative z-10">
+          <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+            <Coins className="w-4 h-4 text-amber-400" />
             {player.coins.toLocaleString()} SYSTEM COINS
           </div>
-          <div>SYSTEM HUNTER PROGRAM v1.0</div>
+          <div className="text-[10px] text-slate-500">HUNTER ID: #{player.id.slice(0, 8)}</div>
         </div>
       </div>
 
@@ -214,10 +277,10 @@ export default function PlayerCard({ player, onUpdateProfile }: PlayerCardProps)
       <button
         onClick={handleDownloadCard}
         disabled={isExporting}
-        className="w-full py-3 px-6 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold uppercase tracking-wider rounded-lg shadow-system-glow flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50"
+        className="w-full py-3 px-6 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold uppercase tracking-wider rounded-lg shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50"
       >
         <Download className="w-5 h-5" />
-        {isExporting ? 'Generating Hunter Card...' : 'Share / Export Player Card (PNG)'}
+        {isExporting ? 'Generating Holographic Status Window...' : 'Export Status Window (PNG)'}
       </button>
     </div>
   );
